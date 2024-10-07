@@ -28,7 +28,7 @@ const EmployeeForm = () => {
                 return;
             }
 
-            // If no error, proceed to set photo
+            // If no error, clear the error and set the photo
             setError('');
             setPhoto(file);
         } else {
@@ -41,7 +41,6 @@ const EmployeeForm = () => {
 
         // Prevent form submission if there is an error or no photo is selected
         if (error || !photo) {
-            setError('Please fix the errors before submitting the form.');
             return;
         }
 
@@ -77,8 +76,6 @@ const EmployeeForm = () => {
             <form className="employee-form" onSubmit={handleSubmit}>
                 <h2>Employee Form</h2>
 
-                {error && <p style={{ color: 'red' }}>{error}</p>} {/* Display validation error */}
-
                 <div className="form-group">
                     <label>Name</label>
                     <input type="text" name="name" value={employee.name} onChange={handleChange} required />
@@ -103,6 +100,10 @@ const EmployeeForm = () => {
                     <label>Photo</label>
                     <input type="file" name="photo" onChange={handleChange} required />
                 </div>
+
+                {/* Display the error message above the submit button */}
+                {error && <p style={{ color: 'red', marginBottom: '10px' }}>{error}</p>}
+
                 <div className="form-actions">
                     <button type="submit" className="add-btn">Submit</button>
                     <button type="reset" className="reset-btn">Reset</button>
