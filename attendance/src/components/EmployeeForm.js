@@ -4,10 +4,33 @@ import './EmployeeForm.css'; // Make sure this path is correct
 const EmployeeForm = () => {
     const [employee, setEmployee] = useState({ name: '', age: '', area: '', username: '', password: '' });
     const [photo, setPhoto] = useState(null); // For photo upload
+    const [error, setError] = useState(''); // For error messages
+
+    // Max file size in bytes (5MB here)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
 
     const handleChange = (e) => {
         if (e.target.name === "photo") {
-            setPhoto(e.target.files[0]);
+            const file = e.target.files[0];
+
+            // File size validation
+            if (file.size > MAX_FILE_SIZE) {
+                setError('File size exceeds 5MB.');
+                setPhoto(null);
+                return;
+            }
+
+            // File type validation
+            if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+                setError('Invalid file type. Only JPG, JPEG, and PNG are allowed.');
+                setPhoto(null);
+                return;
+            }
+
+            // If no error, proceed to set photo
+            setError('');
+            setPhoto(file);
         } else {
             setEmployee({ ...employee, [e.target.name]: e.target.value });
         }
@@ -15,15 +38,20 @@ const EmployeeForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Prevent form submission if there is an error or no photo is selected
+        if (error || !photo) {
+            setError('Please fix the errors before submitting the form.');
+            return;
+        }
+
         const formData = new FormData();
         formData.append('name', employee.name);
         formData.append('age', employee.age);
         formData.append('username', employee.username);
         formData.append('password', employee.password);
         formData.append('area', employee.area);
-        if (photo) {
-            formData.append('photo', photo);
-        }
+        formData.append('photo', photo);
 
         try {
             const response = await fetch('http://localhost/Geofence/attendance/submit-employee.php', {
@@ -48,6 +76,9 @@ const EmployeeForm = () => {
         <div className="form-container">
             <form className="employee-form" onSubmit={handleSubmit}>
                 <h2>Employee Form</h2>
+
+                {error && <p style={{ color: 'red' }}>{error}</p>} {/* Display validation error */}
+
                 <div className="form-group">
                     <label>Name</label>
                     <input type="text" name="name" value={employee.name} onChange={handleChange} required />

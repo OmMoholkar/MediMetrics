@@ -1,88 +1,106 @@
 <?php
-header("Access-Control-Allow-Origin: *"); // Allow requests from any origin (for development purposes)
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS"); // Allow specific methods
-header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Allow specific headers
+header('Access-Control-Allow-Origin: *');
+header('Content-Type: application/json');
 
-$servername = "localhost"; // Your server name
-$username = "root"; // Your MySQL username
-$password = ""; // Your MySQL password
-$dbname = "attendance_db"; // Your database name
+// Enable detailed error reporting
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Initialize response array
-$response = [];
-
-// Check if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get form data
-    $name = $_POST['name'];
-    $age = $_POST['age'];
-    $area = $_POST['area'];
-    $username = $_POST['username'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // Hash the password
+    $name = $_POST['name'] ?? '';
+    $age = $_POST['age'] ?? '';
+    $area = $_POST['area'] ?? '';
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    // File upload handling
-    $photo = $_FILES['photo'];
-    $targetDir = "uploads/"; // Directory to save uploaded files
-    $targetFile = $targetDir . basename($photo["name"]);
-    $uploadOk = 1;
-    $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+    $photoPath = '';
+    $uploadSuccess = false;
 
-    // Check if file is an actual image
-    $check = getimagesize($photo["tmp_name"]);
-    if ($check === false) {
-        $response['error'] = "File is not an image.";
-        $uploadOk = 0;
-    }
+    // Check if file is uploaded
+    if (isset($_FILES['photo'])) {
+        $photo = $_FILES['photo'];
+        $fileError = $photo['error'];
 
-    // Check file size (5MB limit)
-    if ($photo["size"] > 5000000) {
-        $response['error'] = "Sorry, your file is too large.";
-        $uploadOk = 0;
-    }
+        // Log file upload details
+        error_log("File upload details: " . print_r($photo, true));
 
-    // Allow certain file formats
-    if (!in_array($imageFileType, ['jpg', 'png', 'jpeg', 'gif'])) {
-        $response['error'] = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
-        $uploadOk = 0;
-    }
-
-    // Check if everything is ok to upload
-    if ($uploadOk == 0) {
-        $response['error'] = "Sorry, your file was not uploaded.";
-    } else {
-        // Try to upload file
-        if (move_uploaded_file($photo["tmp_name"], $targetFile)) {
-            // Prepare SQL statement
-            $stmt = $conn->prepare("INSERT INTO employee (name, age, area, username, password, photo) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sissss", $name, $age, $area, $username, $password, $targetFile);
-
-            if ($stmt->execute()) {
-                $response['success'] = "Employee data submitted successfully.";
-            } else {
-                $response['error'] = "Error: " . $stmt->error;
+        // Error during file upload
+        if ($fileError !== UPLOAD_ERR_OK) {
+            $uploadError = 'File upload error: ';
+            switch ($fileError) {
+                case UPLOAD_ERR_INI_SIZE:
+                    $uploadError .= 'The uploaded file exceeds the upload_max_filesize directive in php.ini.';
+                    break;
+                case UPLOAD_ERR_FORM_SIZE:
+                    $uploadError .= 'The uploaded file exceeds the MAX_FILE_SIZE directive specified in the HTML form.';
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $uploadError .= 'The file was only partially uploaded.';
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $uploadError .= 'No file was uploaded.';
+                    break;
+                case UPLOAD_ERR_NO_TMP_DIR:
+                    $uploadError .= 'Missing a temporary folder.';
+                    break;
+                case UPLOAD_ERR_CANT_WRITE:
+                    $uploadError .= 'Failed to write file to disk.';
+                    break;
+                case UPLOAD_ERR_EXTENSION:
+                    $uploadError .= 'A PHP extension stopped the file upload.';
+                    break;
+                default:
+                    $uploadError .= 'Unknown upload error.';
+                    break;
             }
-
-            $stmt->close();
-        } else {
-            $response['error'] = "Sorry, there was an error uploading your file.";
+            echo json_encode(['success' => false, 'error' => $uploadError]);
+            exit;
         }
+
+        // File size check (maximum 10MB)
+        if ($photo['size'] > 10485760) {
+            echo json_encode(['success' => false, 'error' => 'File size exceeds 10MB limit.']);
+            exit;
+        }
+
+        // File type check
+        $allowedFileTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!in_array($photo['type'], $allowedFileTypes)) {
+            echo json_encode(['success' => false, 'error' => 'Unsupported file type. Only JPEG, PNG, and GIF allowed.']);
+            exit;
+        }
+
+        // Sanitize file name
+        $fileName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $photo['name']);
+        $photoPath = 'uploads/' . $fileName;
+
+        // Create the uploads directory if it doesn't exist
+        if (!is_dir('uploads')) {
+            mkdir('uploads', 0777, true);
+        }
+
+        // Move the uploaded file
+        if (move_uploaded_file($photo['tmp_name'], $photoPath)) {
+            $uploadSuccess = true;
+        } else {
+            error_log("File upload error: " . print_r($_FILES['photo'], true));
+            echo json_encode(['success' => false, 'error' => 'Failed to move uploaded photo.']);
+            exit;
+        }
+    } else {
+        echo json_encode(['success' => false, 'error' => 'No photo uploaded.']);
+        exit;
+    }
+
+    // Save the employee data if photo upload was successful
+    if ($uploadSuccess) {
+        $data = "Name: $name, Age: $age, Area: $area, Username: $username, Password: $password, Photo: $photoPath\n";
+        file_put_contents('employees.txt', $data, FILE_APPEND | LOCK_EX);
+
+        echo json_encode(['success' => 'Employee data saved successfully, and photo uploaded.']);
     }
 } else {
-    $response['error'] = "Invalid request method.";
+    echo json_encode(['success' => false, 'error' => 'Invalid request method.']);
 }
-
-// Close connection
-$conn->close();
-
-// Return JSON response
-header('Content-Type: application/json');
-echo json_encode($response);
 ?>
