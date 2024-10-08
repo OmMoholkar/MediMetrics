@@ -8,11 +8,11 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'] ?? '';
-    $age = $_POST['age'] ?? '';
-    $area = $_POST['area'] ?? '';
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
+    $name = htmlspecialchars($_POST['name'] ?? '', ENT_QUOTES, 'UTF-8');
+    $age = htmlspecialchars($_POST['age'] ?? '', ENT_QUOTES, 'UTF-8');
+    $area = htmlspecialchars($_POST['area'] ?? '', ENT_QUOTES, 'UTF-8');
+    $username = htmlspecialchars($_POST['username'] ?? '', ENT_QUOTES, 'UTF-8');
+    $password = htmlspecialchars($_POST['password'] ?? '', ENT_QUOTES, 'UTF-8');
 
     $photoPath = '';
     $uploadSuccess = false;
@@ -58,16 +58,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // File size check (maximum 10MB)
-        if ($photo['size'] > 10485760) {
-            echo json_encode(['success' => false, 'error' => 'File size exceeds 10MB limit.']);
+        // File size check (maximum 5MB)
+        if ($photo['size'] > 5 * 1024 * 1024) {
+            echo json_encode(['success' => false, 'error' => 'File size exceeds 5MB limit.']);
             exit;
         }
 
         // File type check
-        $allowedFileTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        $allowedFileTypes = ['image/jpeg', 'image/png', 'image/jpg'];
         if (!in_array($photo['type'], $allowedFileTypes)) {
-            echo json_encode(['success' => false, 'error' => 'Unsupported file type. Only JPEG, PNG, and GIF allowed.']);
+            echo json_encode(['success' => false, 'error' => 'Unsupported file type. Only JPG, JPEG, and PNG allowed.']);
             exit;
         }
 
@@ -76,8 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $photoPath = 'uploads/' . $fileName;
 
         // Create the uploads directory if it doesn't exist
-        if (!is_dir('uploads')) {
-            mkdir('uploads', 0777, true);
+        if (!is_dir('uploads') && !mkdir('uploads', 0777, true)) {
+            echo json_encode(['success' => false, 'error' => 'Failed to create upload directory.']);
+            exit;
         }
 
         // Move the uploaded file
@@ -95,12 +96,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Save the employee data if photo upload was successful
     if ($uploadSuccess) {
-        $data = "Name: $name, Age: $age, Area: $area, Username: $username, Password: $password, Photo: $photoPath\n";
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        $data = "Name: $name, Age: $age, Area: $area, Username: $username, Password: $hashedPassword, Photo: $photoPath\n";
         file_put_contents('employees.txt', $data, FILE_APPEND | LOCK_EX);
-
-        echo json_encode(['success' => 'Employee data saved successfully, and photo uploaded.']);
+        echo json_encode(['success' => 'Employee data saved successfully, and photo uploaded.', 'fileName' => $fileName]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Failed to upload photo.']);
     }
 } else {
     echo json_encode(['success' => false, 'error' => 'Invalid request method.']);
 }
-?>

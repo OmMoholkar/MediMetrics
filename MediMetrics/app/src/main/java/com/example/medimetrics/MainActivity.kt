@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MediMetricsTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    HomeScreen()
+                    LoginScreen()
                 }
             }
         }
