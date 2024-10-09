@@ -1,18 +1,23 @@
 import React from 'react';
+import { Link } from 'react-router-dom'; // Import Link from React Router
 import './Dashboard.css';
 
-const Dashboard = ({ onMenuClick }) => {
+const Dashboard = () => {
     return (
         <div className="dashboard-container">
             {/* Sidebar */}
             <div className="sidebar">
                 <div className="logo">GEOMR</div>
                 <ul>
-                    <li className="active" onClick={() => onMenuClick('dashboard')}>
-                        <i className="fas fa-home"></i> Dashboard
+                    <li className="active">
+                        <Link to="/">
+                            <i className="fas fa-home"></i> Dashboard
+                        </Link>
                     </li>
-                    <li onClick={() => onMenuClick('employeeForm')}>
-                        <i className="fas fa-user"></i> Employees
+                    <li>
+                        <Link to="/employees">
+                            <i className="fas fa-user"></i> Employees
+                        </Link>
                     </li>
                     <li>
                         <i className="fas fa-user-md"></i> Doctors
@@ -34,7 +39,7 @@ const Dashboard = ({ onMenuClick }) => {
                 <header>
                     <h2>DASHBOARD</h2>
                 </header>
-                
+
                 {/* Stats Cards */}
                 <div className="stats-cards">
                     <div className="card">
