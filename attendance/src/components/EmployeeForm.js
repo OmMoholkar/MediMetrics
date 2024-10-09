@@ -60,7 +60,7 @@ const EmployeeForm = () => {
         formData.append('photo', photo);
 
         try {
-            const response = await fetch('http://localhost/Geofence/attendance/submit-employee.php', {
+            const response = await fetch('http://localhost/MediMetrics/attendance/submit-employee.php', {
                 method: 'POST',
                 body: formData,
             });
