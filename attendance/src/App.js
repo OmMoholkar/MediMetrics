@@ -1,14 +1,17 @@
 import React from 'react';
-import EmployeeForm from './components/EmployeeForm'; // Ensure the correct path to EmployeeForm component
+import './App.css';
+import Header from './components/Header';
+import EmployeeForm from './components/EmployeeForm';
+import Login from './components/Login'; // Import the Login component
 
 const App = () => {
-  return (
-    <div>
-      <h1>Employee Registration</h1>
-      <EmployeeForm />
-    </div>
-  );
+    return (
+        <div className="App">
+            <Header />
+            <Login />  {/* Use the Login component here */}
+            <EmployeeForm />
+        </div>
+    );
 };
 
-export default App; // Ensure App is exported as default
-
+export default App;
