@@ -8,7 +8,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         // Fetch employee count from the PHP backend
-        axios.get('http://localhost/MediMetrics/website/getEmployeeCount.php') // Update this path as per your setup
+        axios.get('http://localhost/MediMetrics/website/getEmployeeCount.php') // Make sure the URL is correct
             .then(response => {
                 setEmployeeCount(response.data.count);
             })
