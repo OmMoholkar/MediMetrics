@@ -1,8 +1,22 @@
-import React from 'react';
-import { Link } from 'react-router-dom'; // Import Link from React Router
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom'; 
 import './Dashboard.css';
 
 const Dashboard = () => {
+    const [employeeCount, setEmployeeCount] = useState(0);
+
+    useEffect(() => {
+        // Fetch employee count from the PHP backend
+        axios.get('http://localhost/MediMetrics/website/getEmployeeCount.php') // Update this path as per your setup
+            .then(response => {
+                setEmployeeCount(response.data.count);
+            })
+            .catch(error => {
+                console.error('There was an error fetching the employee count!', error);
+            });
+    }, []);
+
     return (
         <div className="dashboard-container">
             {/* Sidebar */}
@@ -46,7 +60,7 @@ const Dashboard = () => {
                         <i className="fas fa-users"></i>
                         <div>
                             <h3>Total Employees</h3>
-                            <p>3,200</p>
+                            <p>{employeeCount}</p> {/* Display dynamic employee count */}
                         </div>
                     </div>
 
