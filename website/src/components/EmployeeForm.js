@@ -60,7 +60,7 @@ const EmployeeForm = () => {
         formData.append('photo', photo);
 
         try {
-            const response = await fetch('http://localhost/MediMetrics_Github_Repo/website/submit-employee.php', {
+            const response = await fetch('http://localhost/MediMetrics/website/submit-employee.php', {
                 method: 'POST',
                 body: formData,
             });
